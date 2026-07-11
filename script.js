@@ -11,33 +11,34 @@ function showToast(message) {
 
 // Theme toggle
 const themeToggle = document.getElementById("themeToggle");
-const storedTheme = localStorage.getItem("card-theme");
-if (storedTheme) {
-  root.setAttribute("data-theme", storedTheme);
-  themeToggle.checked = storedTheme === "dark";
-} else {
-  themeToggle.checked = window.matchMedia("(prefers-color-scheme: dark)").matches;
+const sunIcon = themeToggle.querySelector(".icon-sun");
+const moonIcon = themeToggle.querySelector(".icon-moon");
+
+function setSvgHidden(svg, hidden) {
+  if (hidden) {
+    svg.setAttribute("hidden", "");
+  } else {
+    svg.removeAttribute("hidden");
+  }
 }
 
-themeToggle.addEventListener("change", () => {
-  const theme = themeToggle.checked ? "dark" : "light";
+function applyTheme(theme) {
   root.setAttribute("data-theme", theme);
-  localStorage.setItem("card-theme", theme);
-});
+  const isDark = theme === "dark";
+  setSvgHidden(sunIcon, isDark);
+  setSvgHidden(moonIcon, !isDark);
+  themeToggle.setAttribute("aria-pressed", String(isDark));
+  themeToggle.setAttribute("aria-label", isDark ? "Switch to light mode" : "Switch to dark mode");
+}
 
-// Mask / unmask email
-const maskToggle = document.getElementById("maskToggle");
-const emailLabel = document.getElementById("emailLabel");
-const fullEmail = emailLabel.textContent;
-const maskedEmail = fullEmail.replace(/^(.{2}).*(@.*)$/, "$1••••••$2");
-let isMasked = false;
+const storedTheme = localStorage.getItem("card-theme");
+const initialTheme = storedTheme || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+applyTheme(initialTheme);
 
-maskToggle.addEventListener("click", () => {
-  isMasked = !isMasked;
-  emailLabel.textContent = isMasked ? maskedEmail : fullEmail;
-  maskToggle.setAttribute("aria-pressed", String(isMasked));
-  maskToggle.querySelector(".icon-eye").hidden = isMasked;
-  maskToggle.querySelector(".icon-eye-off").hidden = !isMasked;
+themeToggle.addEventListener("click", () => {
+  const next = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
+  applyTheme(next);
+  localStorage.setItem("card-theme", next);
 });
 
 // Share
@@ -64,7 +65,6 @@ async function shareCard() {
 }
 
 document.getElementById("shareBtn").addEventListener("click", shareCard);
-document.getElementById("navShare").addEventListener("click", shareCard);
 
 // Save contact (vCard)
 function saveContact() {
@@ -92,19 +92,3 @@ function saveContact() {
 }
 
 document.getElementById("saveContact").addEventListener("click", saveContact);
-document.getElementById("navSave").addEventListener("click", saveContact);
-
-// Bottom nav scroll + active state
-const navButtons = document.querySelectorAll(".nav-btn[data-scroll]");
-navButtons.forEach((btn) => {
-  btn.addEventListener("click", () => {
-    const targetId = btn.dataset.scroll;
-    if (targetId === "top") {
-      document.querySelector(".card").scrollIntoView({ behavior: "smooth", block: "start" });
-    } else {
-      document.getElementById(targetId).scrollIntoView({ behavior: "smooth", block: "center" });
-    }
-    navButtons.forEach((b) => b.classList.remove("is-active"));
-    btn.classList.add("is-active");
-  });
-});
